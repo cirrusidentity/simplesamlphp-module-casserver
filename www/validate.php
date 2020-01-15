@@ -63,6 +63,14 @@ if (array_key_exists('service', $_GET) && array_key_exists('ticket', $_GET)) {
                 (!$forceAuthn || $serviceTicket['forceAuthn']) &&
                 array_key_exists($usernameField, $serviceTicket['attributes'])
             ) {
+                $msgState = [
+                    'service' => $_GET['service'],
+                    'host' => $_SERVER['SERVER_NAME'],
+                    'ip' =>  $_SERVER['REMOTE_ADDR'],
+                    'user' => $serviceTicket['attributes'][$usernameField][0],
+                    'ticketPrefix' => substr($_GET['ticket'], 0, 8),
+                ];
+                SimpleSAML\Logger::info('cas v1 validated: ' . json_encode($msgState, JSON_UNESCAPED_SLASHES));
                 echo $protocol->getValidateSuccessResponse($serviceTicket['attributes'][$usernameField][0]);
             } else {
                 if (!array_key_exists($usernameField, $serviceTicket['attributes'])) {

@@ -28,15 +28,15 @@
  *  language
  */
 
+use SimpleSAML\Configuration;
+use SimpleSAML\Locale\Language;
+use SimpleSAML\Logger;
+use SimpleSAML\Module;
 use SimpleSAML\Module\casserver\Cas\AttributeExtractor;
 use SimpleSAML\Module\casserver\Cas\Protocol\SamlValidateResponder;
 use SimpleSAML\Module\casserver\Cas\ServiceValidator;
 use SimpleSAML\Module\casserver\Cas\Ticket\TicketFactory;
 use SimpleSAML\Module\casserver\Cas\Ticket\TicketStore;
-use SimpleSAML\Configuration;
-use SimpleSAML\Locale\Language;
-use SimpleSAML\Logger;
-use SimpleSAML\Module;
 use SimpleSAML\Session;
 use SimpleSAML\Utils\HTTP;
 
@@ -199,7 +199,19 @@ if (isset($serviceUrl)) {
         'proxies' => [],
         'sessionId' => $sessionTicket['id']
     ]);
+    try {
+        $msgState = [
+            'service' => $serviceUrl,
+            'host' => $_SERVER['SERVER_NAME'],
+            'ip' =>  $_SERVER['REMOTE_ADDR'],
+            'user' => $mappedAttributes['user'],
+            'ticketPrefix' => substr($serviceTicket['id'], 0, 8),
+        ];
+        SimpleSAML\Logger::info('cas login: ' . json_encode($msgState, JSON_UNESCAPED_SLASHES));
 
+    } catch (Exception $e) {
+        //eat it so we don't interupt the flow
+    }
     $ticketStore->addTicket($serviceTicket);
 
     $parameters[$ticketName] = $serviceTicket['id'];

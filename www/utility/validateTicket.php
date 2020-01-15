@@ -107,6 +107,14 @@ if (isset($serviceUrl) && array_key_exists('ticket', $_GET)) {
                         }
                     }
                 }
+                $msgState = [
+                    'service' => $serviceUrl,
+                    'host' => $_SERVER['SERVER_NAME'],
+                    'ip' =>  $_SERVER['REMOTE_ADDR'],
+                    'user' => $serviceTicket['userName'],
+                    'ticketPrefix' => substr($serviceTicket['id'], 0, 8),
+                ];
+                SimpleSAML\Logger::info('cas service validated: ' . json_encode($msgState, JSON_UNESCAPED_SLASHES));
 
                 echo $protocol->getValidateSuccessResponse($serviceTicket['userName']);
             } else {
