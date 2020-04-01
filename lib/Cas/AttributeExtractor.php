@@ -34,7 +34,7 @@ class AttributeExtractor
 
         $casUsernameAttribute = $casconfig->getValue('attrname', 'eduPersonPrincipalName');
 
-        $userName = $attributes[$casUsernameAttribute][0];
+        $userName = $attributes[$casUsernameAttribute][0] ?? null;
         if (empty($userName)) {
             throw new \Exception("No cas user defined for attribute $casUsernameAttribute");
         }

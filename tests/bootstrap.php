@@ -1,5 +1,8 @@
 <?php
 
+putenv('SIMPLESAMLPHP_CONFIG_DIR=' . __DIR__ . '/config');
+
+
 $projectRootDirectory = dirname(__DIR__);
 $projectConfigDirectory = $projectRootDirectory . '/tests/config';
 $casserverModulePath = $projectRootDirectory . '/vendor/simplesamlphp/simplesamlphp/modules/casserver';

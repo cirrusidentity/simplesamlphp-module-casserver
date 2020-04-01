@@ -31,6 +31,41 @@ class AttributeExtractorTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals($attributes, $result['attributes']);
     }
 
+    /**
+     * @dataProvider noUserAttributeProvider
+     * @param array $attributes
+     */
+    public function testMissingUserAttribute(array $attributes)
+    {
+        $this->expectExceptionMessage('No cas user defined for attribute');
+
+        $casConfig = [
+            'attributes' => false
+        ];
+
+        $attributeExtractor = new AttributeExtractor();
+        $attributeExtractor->extractUserAndAttributes(
+            $attributes,
+            Configuration::loadFromArray($casConfig)
+        );
+
+        $this->fail('blah');
+    }
+
+    public function noUserAttributeProvider()
+    {
+        return [
+            [[]],
+            [
+                ['notuid' => ['a']]
+            ],
+            [
+                ['eduPersonPrincipalName' => []]
+            ],
+            [['eduPersonPrincipalName' => ['']]]
+        ];
+    }
+
 
     /**
      * Test disable attribute copying
