@@ -66,7 +66,7 @@ $config = [
                                                                      Defaults to not adding an indicator attribute. */
 
     'enable_logout' => true, //enable CAS logout, defaults to false
-    'skip_logout_page' => true, /*perform a redirect instead of showing a logout page with a link to the location
+    'skip_logout_page' => false, /*perform a redirect instead of showing a logout page with a link to the location
                                   given in the url parameter, defaults to false. Skipping the logout page makes the
                                   url query parameter to CAS logout mandatory for obvious reasons.*/
 
