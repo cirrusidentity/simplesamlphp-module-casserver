@@ -57,7 +57,7 @@ class ServiceValidator
                 } elseif ($result === false) {
                     Logger::warning("Invalid CAS legal service url '$legalUrl'. Error " . preg_last_error());
                 }
-            } elseif (strpos($service, $legalUrl) === 0) {
+            } elseif (stripos($service, $legalUrl) === 0) {
                 $isValidService = true;
                 break;
             }

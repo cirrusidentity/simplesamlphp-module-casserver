@@ -152,6 +152,7 @@ class ServiceValidatorTest extends \PHPUnit\Framework\TestCase
                 // Regex match
                 '|^https://.*\.subdomain.com/|',
                 '#^https://.*-someprefix.com/#',
+                '#^https://.*IGNORE-case.com/#i',
                 // Invalid settings don't blow up
                 '|invalid-regex',
                 '',
@@ -171,6 +172,7 @@ class ServiceValidatorTest extends \PHPUnit\Framework\TestCase
         return [
             ['no-match', false],
             ['https://myservice.com', true],
+            ['https://Myservice.com', true],
             // maybe we should warn if there is no at least a path component of /
             ['https://myservice.com.at.somedomain', true],
             ['https://anotherservice.com.nope', false],
@@ -180,6 +182,7 @@ class ServiceValidatorTest extends \PHPUnit\Framework\TestCase
             ['https://anotherservice.com:9999/', false],
 
             ['http://sub.domain.com/path/a/b/c/more?query=a', true],
+            ['http://sub.Domain.com/Path/a/b/c/more?query=a', true],
             // Matching less path fails
             ['http://sub.domain.com/path/a/b/less', false],
 
@@ -193,8 +196,11 @@ class ServiceValidatorTest extends \PHPUnit\Framework\TestCase
             ['https://encode.com/space%20test/', true],
 
             ['https://any.subdomain.com/', true],
+            // regex isnot case insensitive
+            ['https://ANY.subdomain.com/', true],
             ['https://two.any.subdomain.com/', true],
             ['https://path.subdomain.com/abc', true],
+            ['https://igNore-Case.com/abc', true],
             ['https://subdomain.com/abc', false],
 
             ['https://anything-someprefix.com/abc', true],
