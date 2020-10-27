@@ -27,6 +27,7 @@
  *
  */
 
+use CirrusIdentity\SSP\Utils\MetricLogger;
 use SimpleSAML\Module\casserver\Cas\Protocol\Cas20;
 use SimpleSAML\Module\casserver\Cas\Ticket\TicketFactory;
 use SimpleSAML\Module\casserver\Cas\Ticket\TicketStore;
@@ -115,6 +116,7 @@ if (isset($serviceUrl) && array_key_exists('ticket', $_GET)) {
                     'ticketPrefix' => substr($serviceTicket['id'], 0, 8),
                 ];
                 SimpleSAML\Logger::info('cas service validated: ' . json_encode($msgState, JSON_UNESCAPED_SLASHES));
+                MetricLogger::getInstance()->logMetric('cas', 'validate', $msgState);
 
                 echo $protocol->getValidateSuccessResponse($serviceTicket['userName']);
             } else {

@@ -28,6 +28,7 @@
  *  language
  */
 
+use CirrusIdentity\SSP\Utils\MetricLogger;
 use SimpleSAML\Configuration;
 use SimpleSAML\Locale\Language;
 use SimpleSAML\Logger;
@@ -104,6 +105,12 @@ $sessionTicket = $ticketStore->getTicket($session->getSessionId());
 $sessionRenewId = $sessionTicket ? $sessionTicket['renewId'] : null;
 $requestRenewId = isset($_REQUEST['renewId']) ? $_REQUEST['renewId'] : null;
 
+$msgState = [
+    'service' => $serviceUrl,
+    'host' => $_SERVER['SERVER_NAME'],
+    'ip' =>  $_SERVER['REMOTE_ADDR'],
+];
+MetricLogger::getInstance()->logMetric('cas', 'request', $msgState);
 if (!$as->isAuthenticated() || ($forceAuthn && $sessionRenewId != $requestRenewId)) {
     $query = [];
 
@@ -200,14 +207,12 @@ if (isset($serviceUrl)) {
         'sessionId' => $sessionTicket['id']
     ]);
     try {
-        $msgState = [
-            'service' => $serviceUrl,
-            'host' => $_SERVER['SERVER_NAME'],
-            'ip' =>  $_SERVER['REMOTE_ADDR'],
+        $msgState += [
             'user' => $mappedAttributes['user'],
             'ticketPrefix' => substr($serviceTicket['id'], 0, 8),
         ];
         SimpleSAML\Logger::info('cas login: ' . json_encode($msgState, JSON_UNESCAPED_SLASHES));
+        MetricLogger::getInstance()->logMetric('cas', 'login', $msgState);
 
     } catch (Exception $e) {
         //eat it so we don't interupt the flow

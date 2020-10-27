@@ -14,7 +14,8 @@
     "require": {
         "php": ">=7.2",
         "simplesamlphp/composer-module-installer": "~1.1",
-        "webmozart/assert": "^1.4"
+        "webmozart/assert": "^1.4",
+        "cirrusidentity/simplesamlphp-internal-utils": "dev-master"
     },
     "autoload-dev": {
         "psr-4": {
@@ -30,5 +31,11 @@
     "support": {
         "issues": "https://github.com/simplesamlphp/simplesamlphp-module-casserver/issues",
         "source": "https://github.com/simplesamlphp/simplesamlphp-module-casserver"
+    },
+    "repositories": {
+        "cirrus-cirrusinternal": {
+            "type": "git",
+            "url": "git@bitbucket.org:cirrusidentity/simplesaml-internal-utils.git"
+        }
     }
 }
