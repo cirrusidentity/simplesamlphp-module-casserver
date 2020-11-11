@@ -1,5 +1,6 @@
 <?php
 
+use CirrusIdentity\SSP\Utils\MetricLogger;
 use SAML2\DOMDocumentFactory;
 use SAML2\Utils;
 use SimpleSAML\Logger;
@@ -29,6 +30,15 @@ $ticket = $ticketValidator->validateAndDeleteTicket($ticketId, $target);
 if (!is_array($ticket)) {
     throw new \Exception('Error loading ticket');
 }
+$msgState = [
+    'service' => $target,
+    'host' => $_SERVER['SERVER_NAME'],
+    'ip' =>  $_SERVER['REMOTE_ADDR'],
+    'user' => $ticket['userName'],
+    'ticketPrefix' => substr($ticketId, 0, 8),
+];
+MetricLogger::getInstance()->logMetric('cas', 'samlValidate', $msgState);
+
 $samlValidator = new SamlValidateResponder();
 $response = $samlValidator->convertToSaml($ticket);
 $soap = $samlValidator->wrapInSoap($response);

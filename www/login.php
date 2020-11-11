@@ -110,9 +110,13 @@ $msgState = [
     'host' => $_SERVER['SERVER_NAME'],
     'ip' =>  $_SERVER['REMOTE_ADDR'],
 ];
-MetricLogger::getInstance()->logMetric('cas', 'request', $msgState);
+if (!array_key_exists('requestLogged', $_GET)) {
+    MetricLogger::getInstance()->logMetric('cas', 'request', $msgState);
+}
 if (!$as->isAuthenticated() || ($forceAuthn && $sessionRenewId != $requestRenewId)) {
-    $query = [];
+    $query = [
+        'requestLogged' => 'true'
+    ];
 
     if ($sessionRenewId && $forceAuthn) {
         $query['renewId'] = $sessionRenewId;
@@ -165,9 +169,11 @@ if (!$as->isAuthenticated() || ($forceAuthn && $sessionRenewId != $requestRenewI
             $params['saml:idp'] = $idpList[0];
         }
     }
-
+    MetricLogger::getInstance()->logMetric('cas', 'unauthenticated', $msgState);
     $as->login($params);
 }
+
+
 
 $sessionExpiry = $as->getAuthData('Expire');
 

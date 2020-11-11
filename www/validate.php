@@ -26,6 +26,8 @@
  *
  */
 
+use CirrusIdentity\SSP\Utils\MetricLogger;
+
 require_once('utility/urlUtils.php');
 
 /* Load simpleSAMLphp, configuration and metadata */
@@ -71,6 +73,8 @@ if (array_key_exists('service', $_GET) && array_key_exists('ticket', $_GET)) {
                     'ticketPrefix' => substr($_GET['ticket'], 0, 8),
                 ];
                 SimpleSAML\Logger::info('cas v1 validated: ' . json_encode($msgState, JSON_UNESCAPED_SLASHES));
+                MetricLogger::getInstance()->logMetric('cas', 'validate', $msgState);
+
                 echo $protocol->getValidateSuccessResponse($serviceTicket['attributes'][$usernameField][0]);
             } else {
                 if (!array_key_exists($usernameField, $serviceTicket['attributes'])) {
