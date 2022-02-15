@@ -27,7 +27,7 @@
  *  scope
  *  language
  */
-
+use SimpleSAML\Module\authidppersp\Auth\Source\IdPAndSpSwitchingAuth;
 use CirrusIdentity\SSP\Utils\MetricLogger;
 use SimpleSAML\Configuration;
 use SimpleSAML\Locale\Language;
@@ -114,63 +114,19 @@ if (!array_key_exists('requestLogged', $_GET)) {
     MetricLogger::getInstance()->logMetric('cas', 'request', $msgState);
 }
 if (!$as->isAuthenticated() || ($forceAuthn && $sessionRenewId != $requestRenewId)) {
-    $query = [
-        'requestLogged' => 'true'
-    ];
-
-    if ($sessionRenewId && $forceAuthn) {
-        $query['renewId'] = $sessionRenewId;
-    }
-
-    if (isset($_REQUEST['service'])) {
-        $query['service'] = $_REQUEST['service'];
-    }
-
-    if (isset($_REQUEST['TARGET'])) {
-        $query['TARGET'] = $_REQUEST['TARGET'];
-    }
-
-    if (isset($_REQUEST['method'])) {
-        $query['method'] = $_REQUEST['method'];
-    }
-
-    if (isset($_REQUEST['renew'])) {
-        $query['renew'] = $_REQUEST['renew'];
-    }
-
-    if (isset($_REQUEST['gateway'])) {
-        $query['gateway'] = $_REQUEST['gateway'];
-    }
-
-    if (array_key_exists('language', $_GET)) {
-        $query['language'] = is_string($_GET['language']) ? $_GET['language'] : null;
-    }
-
-    if (isset($_REQUEST['debugMode'])) {
-        $query['debugMode'] = $_REQUEST['debugMode'];
-    }
-
-    $returnUrl = HTTP::getSelfURLNoQuery() . '?' . http_build_query($query);
-
-    $params = [
-        'ForceAuthn' => $forceAuthn,
-        'isPassive' => $isPassive,
-        'ReturnTo' => $returnUrl,
-    ];
-
-    if (isset($_GET['entityId'])) {
-        $params['saml:idp'] = $_GET['entityId'];
-    }
-
-    if (isset($idpList)) {
-        if (sizeof($idpList) > 1) {
-            $params['saml:IDPList'] = $idpList;
-        } else {
-            $params['saml:idp'] = $idpList[0];
-        }
-    }
+    $params = createStateForLogin($isPassive, $sessionRenewId, $forceAuthn);
     MetricLogger::getInstance()->logMetric('cas', 'unauthenticated', $msgState);
     $as->login($params);
+} else {
+    $authSource = $as->getAuthSource();
+    if ($authSource instanceof IdPAndSpSwitchingAuth) {
+//        $defaultSpEntityId = $authSource->getEntityId();
+//        if (!$authSource->isCurrentSessionAuthenticatedForSpApp($defaultSpEntityId)) {
+            //re-auth should handle checking if session is correct for this app
+            $params = createStateForLogin($isPassive, $sessionRenewId, $forceAuthn);
+            $authSource->reauthenticate($params);
+       // }
+    }
 }
 
 
@@ -261,6 +217,65 @@ if (isset($serviceUrl)) {
     );
 }
 
+function createStateForLogin($isPassive, $sessionRenewId, $forceAuthn): array {
+    $query = [
+        'requestLogged' => 'true'
+    ];
+
+    if ($sessionRenewId && $forceAuthn) {
+        $query['renewId'] = $sessionRenewId;
+    }
+
+    if (isset($_REQUEST['service'])) {
+        $query['service'] = $_REQUEST['service'];
+    }
+
+    if (isset($_REQUEST['TARGET'])) {
+        $query['TARGET'] = $_REQUEST['TARGET'];
+    }
+
+    if (isset($_REQUEST['method'])) {
+        $query['method'] = $_REQUEST['method'];
+    }
+
+    if (isset($_REQUEST['renew'])) {
+        $query['renew'] = $_REQUEST['renew'];
+    }
+
+    if (isset($_REQUEST['gateway'])) {
+        $query['gateway'] = $_REQUEST['gateway'];
+    }
+
+    if (array_key_exists('language', $_GET)) {
+        $query['language'] = is_string($_GET['language']) ? $_GET['language'] : null;
+    }
+
+    if (isset($_REQUEST['debugMode'])) {
+        $query['debugMode'] = $_REQUEST['debugMode'];
+    }
+
+    $returnUrl = HTTP::getSelfURLNoQuery() . '?' . http_build_query($query);
+
+    $params = [
+        'ForceAuthn' => $forceAuthn,
+        'isPassive' => $isPassive,
+        'ReturnTo' => $returnUrl,
+    ];
+
+    if (isset($_GET['entityId'])) {
+        $params['saml:idp'] = $_GET['entityId'];
+    }
+
+    if (isset($idpList)) {
+        if (sizeof($idpList) > 1) {
+            $params['saml:IDPList'] = $idpList;
+        } else {
+            $params['saml:idp'] = $idpList[0];
+        }
+    }
+
+    return $params;
+}
 
 /**
  * CAS wants to ensure that a service url provided in login matches exactly that provided in service validate.
