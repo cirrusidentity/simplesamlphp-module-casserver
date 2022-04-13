@@ -114,7 +114,7 @@ if (!array_key_exists('requestLogged', $_GET)) {
     MetricLogger::getInstance()->logMetric('cas', 'request', $msgState);
 }
 if (!$as->isAuthenticated() || ($forceAuthn && $sessionRenewId != $requestRenewId)) {
-    $params = createStateForLogin($isPassive, $sessionRenewId, $forceAuthn);
+    $params = createStateForLogin($isPassive, $sessionRenewId, $forceAuthn, $casconfig);
     MetricLogger::getInstance()->logMetric('cas', 'unauthenticated', $msgState);
     $as->login($params);
 } else {
@@ -123,7 +123,7 @@ if (!$as->isAuthenticated() || ($forceAuthn && $sessionRenewId != $requestRenewI
 //        $defaultSpEntityId = $authSource->getEntityId();
 //        if (!$authSource->isCurrentSessionAuthenticatedForSpApp($defaultSpEntityId)) {
             //re-auth should handle checking if session is correct for this app
-            $params = createStateForLogin($isPassive, $sessionRenewId, $forceAuthn);
+            $params = createStateForLogin($isPassive, $sessionRenewId, $forceAuthn, $casconfig);
             $authSource->reauthenticate($params);
        // }
     }
@@ -217,7 +217,7 @@ if (isset($serviceUrl)) {
     );
 }
 
-function createStateForLogin($isPassive, $sessionRenewId, $forceAuthn): array {
+function createStateForLogin($isPassive, $sessionRenewId, $forceAuthn, Configuration $casconfig): array {
     $query = [
         'requestLogged' => 'true'
     ];
@@ -261,6 +261,11 @@ function createStateForLogin($isPassive, $sessionRenewId, $forceAuthn): array {
         'isPassive' => $isPassive,
         'ReturnTo' => $returnUrl,
     ];
+
+    if ($casconfig->hasValue('authEntityId')) {
+        $params['core:SP'] = $casconfig->getValue('authEntityId');
+    }
+    $params['proxiedProtocol'] = 'cas';
 
     if (isset($_GET['entityId'])) {
         $params['saml:idp'] = $_GET['entityId'];
