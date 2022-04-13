@@ -159,7 +159,9 @@ if (isset($serviceUrl)) {
 
     $attributeExtractor = new AttributeExtractor();
     $mappedAttributes = $attributeExtractor->extractUserAndAttributes($as->getAttributes(), $casconfig);
-
+    if ($casconfig->hasValue('authEntityId')) {
+        unset($mappedAttributes['attributes']['cas:user']);
+    }
     $serviceTicket = $ticketFactory->createServiceTicket([
         'service' => $serviceUrl,
         'forceAuthn' => $forceAuthn,
