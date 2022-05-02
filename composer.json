@@ -15,7 +15,7 @@
         "php": ">=7.2",
         "simplesamlphp/composer-module-installer": "~1.1",
         "webmozart/assert": "^1.4",
-        "cirrusidentity/simplesamlphp-internal-utils": "dev-master"
+        "cirrusidentity/simplesamlphp-internal-utils": "~2.0.0"
     },
     "autoload-dev": {
         "psr-4": {
