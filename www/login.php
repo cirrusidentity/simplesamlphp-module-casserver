@@ -156,7 +156,6 @@ if (array_key_exists('language', $_GET)) {
 if (isset($serviceUrl)) {
     $defaultTicketName = isset($_GET['service']) ? 'ticket' : 'SAMLart';
     $ticketName = $casconfig->getValue('ticketName', $defaultTicketName);
-
     $attributeExtractor = new AttributeExtractor();
     $mappedAttributes = $attributeExtractor->extractUserAndAttributes($as->getAttributes(), $casconfig);
     if ($casconfig->hasValue('authEntityId')) {

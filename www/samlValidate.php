@@ -17,6 +17,7 @@ if (empty($postBody)) {
 $matches = [];
 preg_match('@AssertionArtifact>(.*)</samlp:AssertionArtifact@', $postBody, $matches);
 if (count($matches) != 2 || empty($matches[1])) {
+    Logger::error("Unexpected samlValidate message body: $postBody");
     throw new \Exception('Missing ticketId in AssertionArtifact');
 }
 
