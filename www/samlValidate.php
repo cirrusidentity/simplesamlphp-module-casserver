@@ -42,6 +42,8 @@ $msgState = [
     'ticketPrefix' => substr($ticketId, 0, 8),
 ];
 MetricLogger::getInstance()->logMetric('cas', 'samlValidate', $msgState);
+$msgState['casValidationMethod'] = 'samlValidate';
+MetricLogger::getInstance()->logMetric('cas', 'backchannel', $msgState);
 
 $samlValidator = new SamlValidateResponder();
 $response = $samlValidator->convertToSaml($ticket);

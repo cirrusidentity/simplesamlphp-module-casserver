@@ -74,6 +74,8 @@ if (array_key_exists('service', $_GET) && array_key_exists('ticket', $_GET)) {
                 ];
                 SimpleSAML\Logger::info('cas v1 validated: ' . json_encode($msgState, JSON_UNESCAPED_SLASHES));
                 MetricLogger::getInstance()->logMetric('cas', 'validate', $msgState);
+                $msgState['casValidationMethod'] = 'validate';
+                MetricLogger::getInstance()->logMetric('cas', 'backchannel', $msgState);
 
                 echo $protocol->getValidateSuccessResponse($serviceTicket['attributes'][$usernameField][0]);
             } else {

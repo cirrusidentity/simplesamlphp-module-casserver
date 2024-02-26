@@ -117,6 +117,8 @@ if (isset($serviceUrl) && array_key_exists('ticket', $_GET)) {
                 ];
                 SimpleSAML\Logger::info('cas service validated: ' . json_encode($msgState, JSON_UNESCAPED_SLASHES));
                 MetricLogger::getInstance()->logMetric('cas', 'serviceValidate', $msgState);
+                $msgState['casValidationMethod'] = 'serviceValidate';
+                MetricLogger::getInstance()->logMetric('cas', 'backchannel', $msgState);
 
                 echo $protocol->getValidateSuccessResponse($serviceTicket['userName']);
             } else {
