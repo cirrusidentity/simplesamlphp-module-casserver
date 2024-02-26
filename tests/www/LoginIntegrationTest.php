@@ -432,10 +432,60 @@ class LoginIntegrationTest extends TestCase
     }
 
 
+    public function samlValidateTemplateProvider(): array
+    {
+        $commonSoapRequest  = <<<SOAP
+<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/">
+	<SOAP-ENV:Header/>
+	<SOAP-ENV:Body>
+		<samlp:Request xmlns:samlp="urn:oasis:names:tc:SAML:1.0:protocol" MajorVersion="1" MinorVersion="1" RequestID="_192.168.16.51.1024506224022" IssueInstant="2002-06-19T17:03:44.022Z">
+			<samlp:AssertionArtifact>_TICKETID_</samlp:AssertionArtifact>
+		</samlp:Request>
+	</SOAP-ENV:Body>
+</SOAP-ENV:Envelope>
+SOAP;
+
+        // Jasig java client removed the namespace and added a comment
+        $soapRequestWithCommentWithoutNamespace  = <<<SOAP
+<!--
+Licensed to Apereo under one or more contributor license
+agreements. See the NOTICE file distributed with this work
+for additional information regarding copyright ownership.
+Apereo licenses this file to you under the Apache License,
+Version 2.0 (the "License"); you may not use this file
+except in compliance with the License. You may obtain a
+copy of the License at the following location:
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied. See the License for the
+specific language governing permissions and limitations
+under the License.
+
+-->
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns="urn:oasis:names:tc:SAML:1.0:protocol">
+<soap:Header/>
+<soap:Body>
+<Request MajorVersion="1" MinorVersion="1" RequestID="_ff20c3259db52216126fe992799f287d" IssueInstant="2024-02-21T14:50:25Z">
+<AssertionArtifact>_TICKETID_</AssertionArtifact>
+</Request>
+</soap:Body>
+</soap:Envelope>
+SOAP;
+        return [
+          [$commonSoapRequest],
+          [$soapRequestWithCommentWithoutNamespace],
+        ];
+    }
     /**
+     * @dataProvider samlValidateTemplateProvider
      * @return void
      */
-    public function testSamlValidate()
+    public function testSamlValidate(string $soapTemplate)
     {
         $service_url = 'http://host1.domain:1234/path1';
         $this->authenticate();
@@ -461,16 +511,7 @@ class LoginIntegrationTest extends TestCase
         $matches = [];
         $this->assertEquals(1, preg_match('@ticket=(.*)@', $location, $matches));
         $ticket = $matches[1];
-        $soapRequest = <<<SOAP
-<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/">
-	<SOAP-ENV:Header/>
-	<SOAP-ENV:Body>
-		<samlp:Request xmlns:samlp="urn:oasis:names:tc:SAML:1.0:protocol" MajorVersion="1" MinorVersion="1" RequestID="_192.168.16.51.1024506224022" IssueInstant="2002-06-19T17:03:44.022Z">
-			<samlp:AssertionArtifact>$ticket</samlp:AssertionArtifact>
-		</samlp:Request>
-	</SOAP-ENV:Body>
-</SOAP-ENV:Envelope>
-SOAP;
+        $soapRequest = str_replace('_TICKETID_', $ticket, $soapTemplate);
 
         $resp = $this->post(
             self::$SAMLVALIDATE_URL,

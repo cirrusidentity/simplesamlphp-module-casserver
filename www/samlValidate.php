@@ -15,8 +15,11 @@ if (empty($postBody)) {
 }
 
 $matches = [];
-preg_match('@AssertionArtifact>(.*)</samlp:AssertionArtifact@', $postBody, $matches);
-if (count($matches) != 2 || empty($matches[1])) {
+// newer Java cas clients removed samlp
+preg_match('@AssertionArtifact>(.+)</(samlp:)?AssertionArtifact@', $postBody, $matches);
+// size will be 2 or 3 depending on presence of samlp. size always a minimum of 1
+$countMatch = count($matches);
+if ( $countMatch < 2 || $countMatch > 3 || empty($matches[1])) {
     Logger::error("Unexpected samlValidate message body: $postBody");
     throw new \Exception('Missing ticketId in AssertionArtifact');
 }
