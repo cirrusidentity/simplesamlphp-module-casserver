@@ -58,7 +58,11 @@ if (array_key_exists('service', $_GET) && array_key_exists('ticket', $_GET)) {
             $ticketStore->deleteTicket($_GET['ticket']);
 
             $usernameField = $casconfig->getValue('attrname', 'eduPersonPrincipalName');
-
+            // The rest of cas code looks at userName field while cas 1 looks in attributes, so
+            // set an attribute to the username if it doesn't already exist
+            if (!array_key_exists($usernameField, $serviceTicket['attributes']) && isset($serviceTicket['userName'])) {
+                $serviceTicket['attributes'][$usernameField] = [$serviceTicket['userName']];
+            }
             if (
                 !$ticketFactory->isExpired($serviceTicket) &&
                 sanitize($serviceTicket['service']) == sanitize($_GET['service']) &&
@@ -82,6 +86,7 @@ if (array_key_exists('service', $_GET) && array_key_exists('ticket', $_GET)) {
                 if (!array_key_exists($usernameField, $serviceTicket['attributes'])) {
                     \SimpleSAML\Logger::error('casserver:validate: internal server error. Missing user name attribute: ' .
                         var_export($usernameField, true));
+                    \SimpleSAML\Logger::error('ticket data ' . var_export($serviceTicket, true));
 
                     echo $protocol->getValidateFailureResponse();
                 } else {
