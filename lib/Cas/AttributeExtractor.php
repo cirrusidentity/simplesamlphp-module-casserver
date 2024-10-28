@@ -2,6 +2,7 @@
 
 namespace SimpleSAML\Module\casserver\Cas;
 
+use SimpleSAML\Auth\Simple;
 use SimpleSAML\Configuration;
 use SimpleSAML\Module;
 
@@ -22,14 +23,14 @@ class AttributeExtractor
      * ]
      *
      * If no CAS attributes are configured then the attributes array is empty
-     * @param array $attributes
+     * @param array $state
      * @param \SimpleSAML\Configuration $casconfig
      * @return array
      */
-    public function extractUserAndAttributes(array $attributes, Configuration $casconfig)
+    public function extractUserAndAttributes(array $state, Configuration $casconfig)
     {
         if ($casconfig->hasValue('authproc')) {
-            $attributes = $this->invokeAuthProc($attributes, $casconfig);
+            $attributes = $this->invokeAuthProc($state, $casconfig);
         }
 
         $casUsernameAttribute = $casconfig->getValue('attrname', 'eduPersonPrincipalName');
@@ -68,17 +69,15 @@ class AttributeExtractor
      * Process any authproc filters defined in the configuration. The Authproc filters must only
      * rely on 'Attributes' being available and not on additional SAML state.
      * @see \SimpleSAML_Auth_ProcessingChain::parseFilter() For the original, SAML side implementation
-     * @param array $attributes The current attributes
+     * @param array $state
      * @param \SimpleSAML\Configuration $casconfig The cas configuration
      * @return array The attributes post processing.
      */
-    private function invokeAuthProc(array $attributes, Configuration $casconfig)
+    private function invokeAuthProc(array $state, Configuration $casconfig)
     {
         $filters = $casconfig->getArray('authproc', []);
 
-        $state = [
-            'Attributes' => $attributes
-        ];
+
         foreach ($filters as $config) {
             $className = Module::resolveClass(
                 $config['class'],

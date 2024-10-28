@@ -157,7 +157,7 @@ if (isset($serviceUrl)) {
     $defaultTicketName = isset($_GET['service']) ? 'ticket' : 'SAMLart';
     $ticketName = $casconfig->getValue('ticketName', $defaultTicketName);
     $attributeExtractor = new AttributeExtractor();
-    $mappedAttributes = $attributeExtractor->extractUserAndAttributes($as->getAttributes(), $casconfig);
+    $mappedAttributes = $attributeExtractor->extractUserAndAttributes($as->getAuthDataArray(), $casconfig);
     if ($casconfig->hasValue('authEntityId')) {
         unset($mappedAttributes['attributes']['cas:user']);
     }
