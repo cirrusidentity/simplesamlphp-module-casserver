@@ -3,8 +3,10 @@
 namespace SimpleSAML\Module\casserver\Cas;
 
 use SimpleSAML\Auth\Simple;
+use SimpleSAML\Auth\State;
 use SimpleSAML\Configuration;
 use SimpleSAML\Module;
+use Symfony\Component\HttpFoundation\Request;
 
 /**
  * Extract the user and any mapped attributes from the AuthSource attributes
@@ -29,6 +31,7 @@ class AttributeExtractor
      */
     public function extractUserAndAttributes(array $state, Configuration $casconfig)
     {
+        $attributes = $state['Attributes'] ?? [];
         if ($casconfig->hasValue('authproc')) {
             $attributes = $this->invokeAuthProc($state, $casconfig);
         }
@@ -75,6 +78,8 @@ class AttributeExtractor
      */
     private function invokeAuthProc(array $state, Configuration $casconfig)
     {
+        // Incase an authproc causes us to lose state
+        $state[State::RESTART] = Request::createFromGlobals()->getUri();
         $filters = $casconfig->getArray('authproc', []);
 
 

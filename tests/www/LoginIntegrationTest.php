@@ -122,6 +122,7 @@ class LoginIntegrationTest extends TestCase
                 CURLOPT_FOLLOWLOCATION => true
             ]
         );
+        var_dump($resp);
         $this->assertEquals(500, $resp['code']);
 
         $this->assertStringContainsString(
