@@ -21,9 +21,12 @@ class AttributeExtractorTest extends \PHPUnit\Framework\TestCase
             'eduPersonPrincipalName' => ['testuser@example.com'],
             'additionalAttribute' => ['Taco Club']
         ];
+        $state = [
+            'Attributes' => $attributes
+        ];
         $attributeExtractor = new AttributeExtractor();
         $result = $attributeExtractor->extractUserAndAttributes(
-            $attributes,
+            $state,
             Configuration::loadFromArray($casConfig)
         );
 
@@ -42,10 +45,12 @@ class AttributeExtractorTest extends \PHPUnit\Framework\TestCase
         $casConfig = [
             'attributes' => false
         ];
-
+        $state = [
+            'Attributes' => $attributes
+        ];
         $attributeExtractor = new AttributeExtractor();
         $attributeExtractor->extractUserAndAttributes(
-            $attributes,
+            $state,
             Configuration::loadFromArray($casConfig)
         );
 
@@ -81,9 +86,12 @@ class AttributeExtractorTest extends \PHPUnit\Framework\TestCase
             'eduPersonPrincipalName' => ['testuser@example.com'],
             'additionalAttribute' => ['Taco Club']
         ];
+        $state = [
+            'Attributes' => $attributes
+        ];
         $attributeExtractor = new AttributeExtractor();
         $result = $attributeExtractor->extractUserAndAttributes(
-            $attributes,
+            $state,
             Configuration::loadFromArray($casConfig)
         );
 
@@ -110,9 +118,12 @@ class AttributeExtractorTest extends \PHPUnit\Framework\TestCase
             'userNameAttribute' => ['testuser@example.com'],
             'additionalAttribute' => ['Taco Club']
         ];
+        $state = [
+            'Attributes' => $attributes
+        ];
         $attributeExtractor = new AttributeExtractor();
         $result = $attributeExtractor->extractUserAndAttributes(
-            $attributes,
+            $state,
             Configuration::loadFromArray($casConfig)
         );
 
@@ -136,9 +147,12 @@ class AttributeExtractorTest extends \PHPUnit\Framework\TestCase
             'additionalAttribute' => ['Taco Club'],
             'authproc' => [],
         ];
+        $state = [
+            'Attributes' => $attributes
+        ];
         $attributeExtractor = new AttributeExtractor();
         $result = $attributeExtractor->extractUserAndAttributes(
-            $attributes,
+            $state,
             Configuration::loadFromArray($casConfig)
         );
 
@@ -175,10 +189,13 @@ class AttributeExtractorTest extends \PHPUnit\Framework\TestCase
             'urn:example' => ['Taco Club'],
             'not-affected-by-authproc' => ['Value']
         ];
+        $state = [
+            'Attributes' => $attributes
+        ];
         $attributeExtractor = new AttributeExtractor();
         // The authproc filters will remap the attributes prior to mapping them to CAS attributes
         $result = $attributeExtractor->extractUserAndAttributes(
-            $attributes,
+            $state,
             Configuration::loadFromArray($casConfig)
         );
 
