@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace SimpleSAML\Module\casserver\Controller;
 
+use CirrusIdentity\SSP\Utils\MetricLogger;
 use SimpleSAML\Auth\ProcessingChain;
 use SimpleSAML\Auth\Simple;
 use SimpleSAML\Configuration;
@@ -149,6 +150,15 @@ class LoginController
         // if this parameter is true, single sign-on will be bypassed and authentication will be enforced
         $requestForceAuthenticate = $forceAuthn && $sessionRenewId !== $requestRenewId;
 
+        $msgState = [
+            'service' => $serviceUrl,
+            'host' => $_SERVER['SERVER_NAME'],
+            'ip' =>  $_SERVER['REMOTE_ADDR'],
+        ];
+        if (!array_key_exists('requestLogged', $_GET)) {
+            MetricLogger::getInstance()->logMetric('cas', 'request', $msgState);
+        }
+
         if ($request->query->has(ProcessingChain::AUTHPARAM)) {
             $this->authProcId = $request->query->get(ProcessingChain::AUTHPARAM);
         }
@@ -167,7 +177,7 @@ class LoginController
                 $returnToUrl, 
                 $entityId
             );
-
+            MetricLogger::getInstance()->logMetric('cas', 'unauthenticated', $msgState);
             /*
              *  REDIRECT TO AUTHSOURCE LOGIN
              * */
@@ -226,6 +236,18 @@ class LoginController
                                                                  'proxies' => [],
                                                                  'sessionId' => $sessionTicket['id'],
                                                              ]);
+        
+        try {
+            $msgState += [
+                'user' => $mappedAttributes['user'],
+                'ticketPrefix' => substr($serviceTicket['id'], 0, 8),
+            ];
+            \SimpleSAML\Logger::info('cas login: ' . json_encode($msgState, JSON_UNESCAPED_SLASHES));
+            MetricLogger::getInstance()->logMetric('cas', 'login', $msgState);
+        } catch (\Exception $e) {
+            //eat it so we don't interupt the flow
+        }
+
         $this->ticketStore->addTicket($serviceTicket);
 
         // Check if we are in debug mode.

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace SimpleSAML\Module\casserver\Controller;
 
+use CirrusIdentity\SSP\Utils\MetricLogger;
 use SimpleSAML\Configuration;
 use SimpleSAML\Logger;
 use SimpleSAML\Module\casserver\Cas\Protocol\Cas20;
@@ -121,6 +122,17 @@ class Cas30Controller
         if (!\is_array($ticket)) {
             throw new \RuntimeException('Error loading ticket');
         }
+
+        $msgState = [
+            'service' => $target,
+            'host' => $_SERVER['SERVER_NAME'],
+            'ip' =>  $_SERVER['REMOTE_ADDR'],
+            'user' => $ticket['userName'],
+            'ticketPrefix' => substr($ticketId, 0, 8),
+        ];
+        MetricLogger::getInstance()->logMetric('cas', 'samlValidate', $msgState);
+        $msgState['casValidationMethod'] = 'samlValidate';
+        MetricLogger::getInstance()->logMetric('cas', 'backchannel', $msgState);
 
         $response = $this->validateResponder->convertToSaml($ticket);
         $soap     = $this->validateResponder->wrapInSoap($response);

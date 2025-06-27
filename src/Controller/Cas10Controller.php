@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace SimpleSAML\Module\casserver\Controller;
 
+use CirrusIdentity\SSP\Utils\MetricLogger;
 use SimpleSAML\Configuration;
 use SimpleSAML\Logger;
 use SimpleSAML\Module;
@@ -151,6 +152,19 @@ class Cas10Controller
                 Response::HTTP_BAD_REQUEST,
             );
         }
+
+        $usernameField = $this->casConfig->getValue('attrname', 'eduPersonPrincipalName');
+        $msgState = [
+            'service' => $_GET['service'],
+            'host' => $_SERVER['SERVER_NAME'],
+            'ip' =>  $_SERVER['REMOTE_ADDR'],
+            'user' => $serviceTicket['attributes'][$usernameField][0],
+            'ticketPrefix' => substr($_GET['ticket'], 0, 8),
+        ];
+        \SimpleSAML\Logger::info('cas v1 validated: ' . json_encode($msgState, JSON_UNESCAPED_SLASHES));
+        MetricLogger::getInstance()->logMetric('cas', 'validate', $msgState);
+        $msgState['casValidationMethod'] = 'validate';
+        MetricLogger::getInstance()->logMetric('cas', 'backchannel', $msgState);
 
         // Successful validation
         return new Response(
