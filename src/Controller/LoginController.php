@@ -489,7 +489,7 @@ class LoginController
         bool $gateway, 
         bool $forceAuthn, 
         string $rtnUrl, 
-        string $entityId): array
+        ?string $entityId): array
     {
         $params = [
             'ForceAuthn' => $forceAuthn,
