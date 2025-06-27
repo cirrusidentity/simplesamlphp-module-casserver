@@ -19,6 +19,7 @@ use SimpleSAML\Module\casserver\Cas\ServiceValidator;
 use SimpleSAML\Module\casserver\Cas\Ticket\TicketStore;
 use SimpleSAML\Module\casserver\Controller\Traits\TicketValidatorTrait;
 use SimpleSAML\Module\casserver\Controller\Traits\UrlTrait;
+use SimpleSAML\Module\authidppersp\Auth\Source\IdPAndSpSwitchingAuth;
 use SimpleSAML\Session;
 use SimpleSAML\Utils;
 use SimpleSAML\XHTML\Template;
@@ -160,23 +161,12 @@ class LoginController
         if (
             $requestForceAuthenticate || !$this->authSource->isAuthenticated()
         ) {
-            $params = [
-                'ForceAuthn' => $forceAuthn,
-                'isPassive' => $gateway,
-                'ReturnTo' => $returnToUrl,
-            ];
-
-            if (isset($entityId)) {
-                $params['saml:idp'] = $entityId;
-            }
-
-            if (isset($this->idpList)) {
-                if (sizeof($this->idpList) > 1) {
-                    $params['saml:IDPList'] = $this->idpList;
-                } else {
-                    $params['saml:idp'] = $this->idpList[0];
-                }
-            }
+            $params = $this->createStateForLogin(
+                $gateway, 
+                $forceAuthn, 
+                $returnToUrl, 
+                $entityId
+            );
 
             /*
              *  REDIRECT TO AUTHSOURCE LOGIN
@@ -185,6 +175,19 @@ class LoginController
                 [$this->authSource, 'login'],
                 [$params],
             );
+        } else {
+            if ($this->authSource instanceof IdPAndSpSwitchingAuth) {
+                $params = $this->createStateForLogin(
+                    $gateway, 
+                    $forceAuthn, 
+                    $returnToUrl, 
+                    $entityId
+                );
+                return new RunnableResponse(
+                    [$this->authSource, 'reauthenticate'],
+                    [$params],
+                );                    
+            }
         }
 
         // We are Authenticated.
@@ -449,5 +452,41 @@ class LoginController
         $processingChainFactory = new ProcessingChainFactory($this->casConfig);
         // Attribute Extractor
         $this->attributeExtractor = new AttributeExtractor($this->casConfig, $processingChainFactory);
+    }
+
+    /**
+     * createStateForLogin create params for login
+     *
+     * @param boolean $gateway
+     * @param boolean $forceAuthn
+     * @param string $rtnUrl
+     * @param ?string $entityId
+     * @return array
+     */
+    private function createStateForLogin(
+        bool $gateway, 
+        bool $forceAuthn, 
+        string $rtnUrl, 
+        string $entityId): array
+    {
+        $params = [
+            'ForceAuthn' => $forceAuthn,
+            'isPassive' => $gateway,
+            'ReturnTo' => $rtnUrl,
+        ];
+
+        if (isset($entityId)) {
+            $params['saml:idp'] = $entityId;
+        }
+
+        if (isset($this->idpList)) {
+            if (sizeof($this->idpList) > 1) {
+                $params['saml:IDPList'] = $this->idpList;
+            } else {
+                $params['saml:idp'] = $this->idpList[0];
+            }
+        }
+
+        return $params;
     }
 }

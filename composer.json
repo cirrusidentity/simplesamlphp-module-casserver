@@ -5,6 +5,8 @@
     "homepage": "https://github.com/simplesamlphp/simplesamlphp-module-casserver",
     "license": "LGPL-2.1-or-later",
     "type": "simplesamlphp-module",
+    "minimum-stability": "alpha",
+    "prefer-stable": true,
     "config": {
         "preferred-install": {
             "simplesamlphp/simplesamlphp": "source",
@@ -44,7 +46,9 @@
         "simplesamlphp/xml-soap": "^1.5",
         "symfony/http-foundation": "^6.4",
         "symfony/http-kernel": "^6.4",
-        "simplesamlphp/saml11": "~1.2.4"
+        "simplesamlphp/saml11": "~1.2.4",
+        "cirrusidentity/simplesamlphp-module-authidppersp": "dev-SSP-2080_ssp2_upgrade as v3.1.0",
+        "cirrusidentity/simplesamlphp-internal-utils": "~v3.0.1"
     },
     "require-dev": {
         "simplesamlphp/simplesamlphp-test-framework": "^1.7",
@@ -73,5 +77,19 @@
         "propose-fix": [
             "vendor/bin/phpcs --report=diff"
         ]
+    },
+    "repositories": {
+        "simplesamlphp-module-authidppersp": {
+            "type": "vcs",
+            "url": "git@bitbucket.org:cirrusidentity/simplesamlphp-module-authidppersp.git"
+        },
+        "cirrus-cirrusdynamicconfig": {
+            "type": "git",
+            "url": "git@bitbucket.org:cirrusidentity/simplesamlphp-module-cirrusdynamicconfig.git"
+        },
+        "cirrus-cirrusinternal": {
+            "type": "git",
+            "url": "git@bitbucket.org:cirrusidentity/simplesaml-internal-utils.git"
+        }
     }
 }
