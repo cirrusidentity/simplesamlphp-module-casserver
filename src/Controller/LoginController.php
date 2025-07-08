@@ -497,6 +497,11 @@ class LoginController
             'ReturnTo' => $rtnUrl,
         ];
 
+        if ($this->casConfig->hasValue('authEntityId')) {
+            $params['core:SP'] = $this->casConfig->getValue('authEntityId');
+        }
+        $params['proxiedProtocol'] = 'cas';
+
         if (isset($entityId)) {
             $params['saml:idp'] = $entityId;
         }
