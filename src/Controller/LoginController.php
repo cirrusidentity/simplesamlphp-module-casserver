@@ -186,7 +186,7 @@ class LoginController
                 [$params],
             );
         } else {
-            if ($this->authSource instanceof IdPAndSpSwitchingAuth) {
+            if ($this->authSource->getAuthSource() instanceof IdPAndSpSwitchingAuth) {
                 $params = $this->createStateForLogin(
                     $gateway, 
                     $forceAuthn, 
