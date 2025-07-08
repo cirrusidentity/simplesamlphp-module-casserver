@@ -193,10 +193,8 @@ class LoginController
                     $returnToUrl, 
                     $entityId
                 );
-                return new RunnableResponse(
-                    [$this->authSource, 'reauthenticate'],
-                    [$params],
-                );                    
+                // Call reauthenticate directly so the rest of the flow can continue
+                $this->authSource->getAuthSource()->reauthenticate($params);
             }
         }
 
