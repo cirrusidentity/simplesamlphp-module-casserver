@@ -5,8 +5,6 @@
     "homepage": "https://github.com/simplesamlphp/simplesamlphp-module-casserver",
     "license": "LGPL-2.1-or-later",
     "type": "simplesamlphp-module",
-    "minimum-stability": "alpha",
-    "prefer-stable": true,
     "config": {
         "preferred-install": {
             "simplesamlphp/simplesamlphp": "source",
@@ -47,8 +45,9 @@
         "symfony/http-foundation": "^6.4",
         "symfony/http-kernel": "^6.4",
         "simplesamlphp/saml11": "~1.2.4",
-        "cirrusidentity/simplesamlphp-module-authidppersp": "dev-SSP-2080_ssp2_upgrade as v3.1.0",
-        "cirrusidentity/simplesamlphp-internal-utils": "~v3.0.1"
+        "cirrusidentity/simplesamlphp-module-authidppersp": "~v4.0.0-BETA",
+        "cirrusidentity/simplesamlphp-internal-utils": "~v3.0.1",
+	"cirrusidentity/simplesamlphp-module-cirrusgeneral": "~v3.0.0-alpha.3"
     },
     "require-dev": {
         "simplesamlphp/simplesamlphp-test-framework": "^1.7",
