@@ -156,8 +156,8 @@ class Cas10Controller
         $usernameField = $this->casConfig->getValue('attrname', 'eduPersonPrincipalName');
         $msgState = [
             'service' => $_GET['service'],
-            'host' => $_SERVER['SERVER_NAME'],
-            'ip' =>  $_SERVER['REMOTE_ADDR'],
+            'host' => $request->server->get('SERVER_NAME'),
+            'ip' =>  $request->server->get('REMOTE_ADDR'),
             'user' => $serviceTicket['attributes'][$usernameField][0],
             'ticketPrefix' => substr($_GET['ticket'], 0, 8),
         ];
