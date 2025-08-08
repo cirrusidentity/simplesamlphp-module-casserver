@@ -11,6 +11,7 @@ use SimpleSAML\Configuration;
 use SimpleSAML\HTTP\RunnableResponse;
 use SimpleSAML\Logger;
 use SimpleSAML\Module;
+use SimpleSAML\Module\authidppersp\Auth\Source\IdPAndSpSwitchingAuth;
 use SimpleSAML\Module\casserver\Cas\AttributeExtractor;
 use SimpleSAML\Module\casserver\Cas\Factories\ProcessingChainFactory;
 use SimpleSAML\Module\casserver\Cas\Factories\TicketFactory;
@@ -20,7 +21,6 @@ use SimpleSAML\Module\casserver\Cas\ServiceValidator;
 use SimpleSAML\Module\casserver\Cas\Ticket\TicketStore;
 use SimpleSAML\Module\casserver\Controller\Traits\TicketValidatorTrait;
 use SimpleSAML\Module\casserver\Controller\Traits\UrlTrait;
-use SimpleSAML\Module\authidppersp\Auth\Source\IdPAndSpSwitchingAuth;
 use SimpleSAML\Session;
 use SimpleSAML\Utils;
 use SimpleSAML\XHTML\Template;
@@ -172,10 +172,10 @@ class LoginController
             $requestForceAuthenticate || !$this->authSource->isAuthenticated()
         ) {
             $params = $this->createStateForLogin(
-                $gateway, 
-                $forceAuthn, 
-                $returnToUrl, 
-                $entityId
+                $gateway,
+                $forceAuthn,
+                $returnToUrl,
+                $entityId,
             );
             MetricLogger::getInstance()->logMetric('cas', 'unauthenticated', $msgState);
             /*
@@ -188,10 +188,10 @@ class LoginController
         } else {
             if ($this->authSource->getAuthSource() instanceof IdPAndSpSwitchingAuth) {
                 $params = $this->createStateForLogin(
-                    $gateway, 
-                    $forceAuthn, 
-                    $returnToUrl, 
-                    $entityId
+                    $gateway,
+                    $forceAuthn,
+                    $returnToUrl,
+                    $entityId,
                 );
                 // Call reauthenticate directly so the rest of the flow can continue
                 $this->authSource->getAuthSource()->reauthenticate($params);
@@ -234,7 +234,7 @@ class LoginController
                                                                  'proxies' => [],
                                                                  'sessionId' => $sessionTicket['id'],
                                                              ]);
-        
+
         try {
             $msgState += [
                 'user' => $mappedAttributes['user'],
@@ -486,11 +486,11 @@ class LoginController
      * @return array
      */
     private function createStateForLogin(
-        bool $gateway, 
-        bool $forceAuthn, 
-        string $rtnUrl, 
-        ?string $entityId): array
-    {
+        bool $gateway,
+        bool $forceAuthn,
+        string $rtnUrl,
+        ?string $entityId,
+    ): array {
         $params = [
             'ForceAuthn' => $forceAuthn,
             'isPassive' => $gateway,
