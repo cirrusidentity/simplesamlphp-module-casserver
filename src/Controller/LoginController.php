@@ -152,10 +152,10 @@ class LoginController
 
         $msgState = [
             'service' => $serviceUrl,
-            'host' => $request->server->get('SERVER_NAME'),
-            'ip' =>  $request->server->get('REMOTE_ADDR'),
+            'host' => $request->getHost(),
+            'ip' =>  $request->getClientIp(),
         ];
-        if (!array_key_exists('requestLogged', $_GET)) {
+        if ($request->query->has('requestLogged')) {
             MetricLogger::getInstance()->logMetric('cas', 'request', $msgState);
         }
 

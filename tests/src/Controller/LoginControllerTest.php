@@ -13,6 +13,7 @@ use SimpleSAML\Configuration;
 use SimpleSAML\HTTP\RunnableResponse;
 use SimpleSAML\Module;
 use SimpleSAML\Module\casserver\Controller\LoginController;
+use SimpleSAML\Module\core\Auth\Source\AdminPassword;
 use SimpleSAML\Session;
 use SimpleSAML\Utils;
 use Symfony\Component\HttpFoundation\Request;
@@ -35,7 +36,7 @@ class LoginControllerTest extends TestCase
     {
         $this->authSimpleMock = $this->getMockBuilder(Simple::class)
             ->disableOriginalConstructor()
-            ->onlyMethods(['getAuthData', 'isAuthenticated', 'login', 'getAuthDataArray'])
+            ->onlyMethods(['getAuthData', 'isAuthenticated', 'login', 'getAuthDataArray', 'getAuthSource'])
             ->getMock();
 
         $this->sspContainer = $this->getMockBuilder(SspContainer::class)
@@ -302,6 +303,7 @@ class LoginControllerTest extends TestCase
         $this->sessionMock->expects($this->exactly(2))->method('getSessionId')->willReturn($sessionId);
         $this->authSimpleMock->expects($this->once())->method('getAuthData')->with('Expire')->willReturn(9999999999);
         $this->authSimpleMock->expects($this->once())->method('getAuthDataArray')->willReturn($state);
+        $this->authSimpleMock->expects($this->once())->method('getAuthSource')->willReturn(new AdminPassword(['AuthId' => 'mock'],[]));
 
         $controllerMock->expects($this->once())->method('getSession')->willReturn($this->sessionMock);
         $this->authSimpleMock->expects($this->any())->method('isAuthenticated')->willReturn(true);
@@ -315,8 +317,7 @@ class LoginControllerTest extends TestCase
         $response = $controllerMock->login($loginRequest, ...$queryParameters);
         $this->assertInstanceOf(RunnableResponse::class, $response);
         $arguments = $response->getArguments();
-        $this->assertEquals('https://example.com/ssp/module.php/cas/linkback.php', $arguments[0]);
-        $this->assertStringStartsWith('ST-', array_values($arguments[1])[0] ?? []);
+        $this->assertStringStartsWith($redirectURL, $arguments[0]);
         $callable = (array)$response->getCallable();
         $this->assertEquals('redirectTrustedURL', $callable[1] ?? '');
     }

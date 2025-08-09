@@ -125,8 +125,8 @@ class Cas30Controller
 
         $msgState = [
             'service' => $TARGET,
-            'host' => $request->server->get('SERVER_NAME'),
-            'ip' =>  $request->server->get('REMOTE_ADDR'),
+            'host' => $request->getHost(),
+            'ip' =>  $request->getClientIp(),
             'user' => $ticket['userName'],
             'ticketPrefix' => substr($ticketId, 0, 8),
         ];
