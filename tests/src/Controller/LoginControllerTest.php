@@ -303,7 +303,9 @@ class LoginControllerTest extends TestCase
         $this->sessionMock->expects($this->exactly(2))->method('getSessionId')->willReturn($sessionId);
         $this->authSimpleMock->expects($this->once())->method('getAuthData')->with('Expire')->willReturn(9999999999);
         $this->authSimpleMock->expects($this->once())->method('getAuthDataArray')->willReturn($state);
-        $this->authSimpleMock->expects($this->once())->method('getAuthSource')->willReturn(new AdminPassword(['AuthId' => 'mock'],[]));
+        $this->authSimpleMock->expects($this->once())->method('getAuthSource')->willReturn(
+            new AdminPassword(['AuthId' => 'mock'], []),
+        );
 
         $controllerMock->expects($this->once())->method('getSession')->willReturn($this->sessionMock);
         $this->authSimpleMock->expects($this->any())->method('isAuthenticated')->willReturn(true);
