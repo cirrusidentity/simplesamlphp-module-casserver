@@ -11,4 +11,5 @@ enum OverrideConfigPropertiesEnum: string
     case AttributesToTransfer = 'attributes_to_transfer';
     case Authproc = 'authproc';
     case ServiceTicketExpireTime = 'service_ticket_expire_time';
+    case AuthEntityId = 'authEntityId';
 }
