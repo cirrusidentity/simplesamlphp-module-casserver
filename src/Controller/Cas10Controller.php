@@ -153,15 +153,13 @@ class Cas10Controller
             );
         }
 
-        $usernameField = $this->casConfig->getValue('attrname', 'eduPersonPrincipalName');
         $msgState = [
-            'service' => $_GET['service'],
-            'host' => $_SERVER['SERVER_NAME'],
-            'ip' =>  $_SERVER['REMOTE_ADDR'],
-            'user' => $serviceTicket['attributes'][$usernameField][0],
-            'ticketPrefix' => substr($_GET['ticket'], 0, 8),
+            'service' => $service,
+            'host' => $request->getHost(),
+            'ip' =>  $request->getClientIp(),
+            'user' => $serviceTicket['userName'],
+            'ticketPrefix' => substr($ticket, 0, 8),
         ];
-        \SimpleSAML\Logger::info('cas v1 validated: ' . json_encode($msgState, JSON_UNESCAPED_SLASHES));
         MetricLogger::getInstance()->logMetric('cas', 'validate', $msgState);
         $msgState['casValidationMethod'] = 'validate';
         MetricLogger::getInstance()->logMetric('cas', 'backchannel', $msgState);
