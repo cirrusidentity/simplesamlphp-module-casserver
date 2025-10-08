@@ -11,7 +11,10 @@
             "*": "dist"
         },
         "allow-plugins": {
-            "simplesamlphp/composer-module-installer": true
+            "simplesamlphp/composer-module-installer": true,
+            "simplesamlphp/composer-xmlprovider-installer": true,
+            "dealerdirect/phpcodesniffer-composer-installer": true,
+            "phpstan/extension-installer": true
         }
     },
     "require": {
