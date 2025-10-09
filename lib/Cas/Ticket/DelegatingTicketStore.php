@@ -39,7 +39,7 @@ class DelegatingTicketStore extends TicketStore
             // TicketStore expects the store config to be in a specific item
             $storeConfig = Configuration::loadFromArray(['ticketstore' => $storeArray]);
             $class = $storeConfig->getConfigItem('ticketstore')->getString('class');
-            $ticketStoreClass = Module::resolveClass($class, 'Cas_Ticket');
+            $ticketStoreClass = Module::resolveClass($class, 'Cas\Ticket');
             try {
                 /**
                  * @var TicketStore $ticketStore
