@@ -29,6 +29,7 @@
  */
 use SimpleSAML\Module\authidppersp\Auth\Source\IdPAndSpSwitchingAuth;
 use CirrusIdentity\SSP\Utils\MetricLogger;
+use SimpleSAML\Auth\State;
 use SimpleSAML\Configuration;
 use SimpleSAML\Locale\Language;
 use SimpleSAML\Logger;
@@ -43,6 +44,8 @@ use SimpleSAML\Utils\HTTP;
 
 require_once('utility/urlUtils.php');
 
+const COMPLETED = '\SimpleSAML\Auth\ProcessingChain.completed';
+
 $forceAuthn = isset($_GET['renew']) && $_GET['renew'];
 $isPassive = isset($_GET['gateway']) && $_GET['gateway'];
 // Determine if client wants us to post or redirect the response. Default is redirect.
@@ -50,6 +53,17 @@ $redirect = !(isset($_GET['method']) && 'POST' === $_GET['method']);
 
 $casconfig = Configuration::getConfig('module_casserver.php');
 $serviceValidator = new ServiceValidator($casconfig);
+
+// if we're returning here from authproc processing, extract the original request parameters
+$stateId = $_GET['AuthProcId'] ?? null;
+if (isset($stateId)) {
+    $state = State::loadState($stateId, COMPLETED);
+    $originalQueryString = $state[AttributeExtractor::QUERY_PARAM_KEY];
+    if (isset($originalQueryString)) {
+        parse_str($originalQueryString, $_GET);
+    }
+}
+
 
 $serviceUrl = $_GET['service'] ?? $_GET['TARGET'] ?? null;
 

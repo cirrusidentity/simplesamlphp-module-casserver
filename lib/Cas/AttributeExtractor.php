@@ -14,6 +14,8 @@ use SimpleSAML\Auth\ProcessingChain;
  */
 class AttributeExtractor
 {
+    public const QUERY_PARAM_KEY = 'casserver:queryParams';
+
     /**
      * Determine the user and any CAS attributes based on the attributes from the
      * authsource and the CAS configuration.
@@ -81,6 +83,9 @@ class AttributeExtractor
     {
         // Incase an authproc causes us to lose state
         $state[State::RESTART] = Request::createFromGlobals()->getUri();
+
+        // save our query string so we can reconstruct it after processing
+        $state[AttributeExtractor::QUERY_PARAM_KEY] = Request::createFromGlobals()->getQueryString();
 
         $filters = $casconfig->getArray('authproc', []);
         $idpMetadata = [
