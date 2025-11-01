@@ -167,6 +167,14 @@ class LoginController
         // This will be used to come back from the AuthSource login or from the Processing Chain
         $returnToUrl = $this->getReturnUrl($request, $sessionTicket);
 
+        // If user is not authenticated, then the gateway option says to just return the user to the service url
+        if ($serviceUrl !== null && $gateway && !$this->authSource->isAuthenticated()) {
+            return new RunnableResponse(
+                [$this->httpUtils, 'redirectTrustedURL'],
+                [$serviceUrl, []],
+            );
+        }
+
         // Authenticate
         if (
             $requestForceAuthenticate || !$this->authSource->isAuthenticated()
