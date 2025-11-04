@@ -169,7 +169,10 @@ if (isset($serviceUrl)) {
     $defaultTicketName = isset($_GET['service']) ? 'ticket' : 'SAMLart';
     $ticketName = $casconfig->getValue('ticketName', $defaultTicketName);
     $attributeExtractor = new AttributeExtractor();
-    $mappedAttributes = $attributeExtractor->extractUserAndAttributes($as->getAuthDataArray(), $casconfig);
+    // if we already have a state because we're returning here after running authproc filters, use it
+    $state ??= $as->getAuthDataArray();
+    $mappedAttributes = $attributeExtractor->extractUserAndAttributes($state, $casconfig);
+    //$mappedAttributes = $attributeExtractor->extractUserAndAttributes($as->getAuthDataArray(), $casconfig);
     if ($casconfig->hasValue('authEntityId')) {
         unset($mappedAttributes['attributes']['cas:user']);
     }
