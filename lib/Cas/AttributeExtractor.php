@@ -6,13 +6,19 @@ use SimpleSAML\Auth\Simple;
 use SimpleSAML\Auth\State;
 use SimpleSAML\Configuration;
 use SimpleSAML\Module;
+use SimpleSAML\Logger;
 use Symfony\Component\HttpFoundation\Request;
+use SimpleSAML\Auth\ProcessingChain;
 
 /**
  * Extract the user and any mapped attributes from the AuthSource attributes
  */
 class AttributeExtractor
 {
+    public const QUERY_PARAM_KEY = 'casserver:queryParams';
+    
+    public const COMPLETED = '\SimpleSAML\Auth\ProcessingChain.completed';
+
     /**
      * Determine the user and any CAS attributes based on the attributes from the
      * authsource and the CAS configuration.
@@ -32,8 +38,14 @@ class AttributeExtractor
     public function extractUserAndAttributes(array $state, Configuration $casconfig)
     {
         $attributes = $state['Attributes'] ?? [];
-        if ($casconfig->hasValue('authproc')) {
-            $attributes = $this->invokeAuthProc($state, $casconfig);
+        if ($casconfig->hasValue('authproc')) {       
+            // only run authprocs if stage is empty or if it is set, that it's not set to completed     
+            if (!isset($state[State::STAGE]) || $state[State::STAGE] !== AttributeExtractor::COMPLETED) {
+                $attributes = $this->invokeAuthProc($state, $casconfig);
+            } else {
+                // we've already run authprocs
+                Logger::debug('Skipping repeated invokeAuthProc() call');
+            }
         }
 
         $casUsernameAttribute = $casconfig->getValue('attrname', 'eduPersonPrincipalName');
@@ -80,21 +92,31 @@ class AttributeExtractor
     {
         // Incase an authproc causes us to lose state
         $state[State::RESTART] = Request::createFromGlobals()->getUri();
+
+        // save our query string so we can reconstruct it after processing
+        $state[AttributeExtractor::QUERY_PARAM_KEY] = Request::createFromGlobals()->getQueryString();
+
         $filters = $casconfig->getArray('authproc', []);
+        $idpMetadata = [
+            'entityid' => $state['Source']['entityid'] ?? '',
+            // ProcessChain needs to know the list of authproc filters from the cas configuration
+            'authproc' => $filters,
+        ];
+        $spMetadata = [
+            'entityid' => $state['Destination']['entityid'] ?? '',
+        ];
 
+        // Get the ReturnTo from the state or fallback to the login page
+        $state['ReturnURL'] = $state['ReturnTo'] ?? Module::getModuleURL('casserver/login.php');
+        $state['Destination'] = $spMetadata;
+        $state['Source'] = $idpMetadata;
 
-        foreach ($filters as $config) {
-            $className = Module::resolveClass(
-                $config['class'],
-                'Auth\Process',
-                \SimpleSAML\Auth\ProcessingFilter::class
-            );
-            // Unset 'class' to prevent the filter from interpreting it as an option
-            unset($config['class']);
-            /** @psalm-suppress InvalidStringClass */
-            $filter = new $className($config, null);
-            $filter->process($state);
-        }
+        $chain = new ProcessingChain(
+            $state['Source'],
+            $state['Destination'],
+            'casserver',
+        );
+        $chain->processState($state);
 
         return $state['Attributes'];
     }

@@ -29,6 +29,7 @@
  */
 use SimpleSAML\Module\authidppersp\Auth\Source\IdPAndSpSwitchingAuth;
 use CirrusIdentity\SSP\Utils\MetricLogger;
+use SimpleSAML\Auth\State;
 use SimpleSAML\Configuration;
 use SimpleSAML\Locale\Language;
 use SimpleSAML\Logger;
@@ -50,6 +51,17 @@ $redirect = !(isset($_GET['method']) && 'POST' === $_GET['method']);
 
 $casconfig = Configuration::getConfig('module_casserver.php');
 $serviceValidator = new ServiceValidator($casconfig);
+
+// if we're returning here from authproc processing, extract the original request parameters
+$stateId = $_GET['AuthProcId'] ?? null;
+if (isset($stateId)) {
+    $state = State::loadState($stateId, AttributeExtractor::COMPLETED);
+    $originalQueryString = $state[AttributeExtractor::QUERY_PARAM_KEY];
+    if (isset($originalQueryString)) {
+        parse_str($originalQueryString, $_GET);
+    }
+}
+
 
 $serviceUrl = $_GET['service'] ?? $_GET['TARGET'] ?? null;
 
@@ -157,7 +169,10 @@ if (isset($serviceUrl)) {
     $defaultTicketName = isset($_GET['service']) ? 'ticket' : 'SAMLart';
     $ticketName = $casconfig->getValue('ticketName', $defaultTicketName);
     $attributeExtractor = new AttributeExtractor();
-    $mappedAttributes = $attributeExtractor->extractUserAndAttributes($as->getAuthDataArray(), $casconfig);
+    // if we already have a state because we're returning here after running authproc filters, use it
+    $state ??= $as->getAuthDataArray();
+    $mappedAttributes = $attributeExtractor->extractUserAndAttributes($state, $casconfig);
+    //$mappedAttributes = $attributeExtractor->extractUserAndAttributes($as->getAuthDataArray(), $casconfig);
     if ($casconfig->hasValue('authEntityId')) {
         unset($mappedAttributes['attributes']['cas:user']);
     }
