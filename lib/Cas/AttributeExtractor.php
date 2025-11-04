@@ -6,6 +6,7 @@ use SimpleSAML\Auth\Simple;
 use SimpleSAML\Auth\State;
 use SimpleSAML\Configuration;
 use SimpleSAML\Module;
+use SimpleSAML\Logger;
 use Symfony\Component\HttpFoundation\Request;
 use SimpleSAML\Auth\ProcessingChain;
 
@@ -15,6 +16,8 @@ use SimpleSAML\Auth\ProcessingChain;
 class AttributeExtractor
 {
     public const QUERY_PARAM_KEY = 'casserver:queryParams';
+    
+    public const COMPLETED = '\SimpleSAML\Auth\ProcessingChain.completed';
 
     /**
      * Determine the user and any CAS attributes based on the attributes from the
@@ -35,8 +38,14 @@ class AttributeExtractor
     public function extractUserAndAttributes(array $state, Configuration $casconfig)
     {
         $attributes = $state['Attributes'] ?? [];
-        if ($casconfig->hasValue('authproc')) {
-            $attributes = $this->invokeAuthProc($state, $casconfig);
+        if ($casconfig->hasValue('authproc')) {       
+            // only run authprocs if stage is empty or if it is set, that it's not set to completed     
+            if (!isset($state[State::STAGE]) || $state[State::STAGE] !== AttributeExtractor::COMPLETED) {
+                $attributes = $this->invokeAuthProc($state, $casconfig);
+            } else {
+                // we've already run authprocs
+                Logger::debug('Skipping repeated invokeAuthProc() call');
+            }
         }
 
         $casUsernameAttribute = $casconfig->getValue('attrname', 'eduPersonPrincipalName');

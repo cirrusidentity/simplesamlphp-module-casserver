@@ -44,8 +44,6 @@ use SimpleSAML\Utils\HTTP;
 
 require_once('utility/urlUtils.php');
 
-const COMPLETED = '\SimpleSAML\Auth\ProcessingChain.completed';
-
 $forceAuthn = isset($_GET['renew']) && $_GET['renew'];
 $isPassive = isset($_GET['gateway']) && $_GET['gateway'];
 // Determine if client wants us to post or redirect the response. Default is redirect.
@@ -57,7 +55,7 @@ $serviceValidator = new ServiceValidator($casconfig);
 // if we're returning here from authproc processing, extract the original request parameters
 $stateId = $_GET['AuthProcId'] ?? null;
 if (isset($stateId)) {
-    $state = State::loadState($stateId, COMPLETED);
+    $state = State::loadState($stateId, AttributeExtractor::COMPLETED);
     $originalQueryString = $state[AttributeExtractor::QUERY_PARAM_KEY];
     if (isset($originalQueryString)) {
         parse_str($originalQueryString, $_GET);
