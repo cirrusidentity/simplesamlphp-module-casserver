@@ -26,6 +26,7 @@ namespace SimpleSAML\Module\casserver\Cas\Protocol;
 use DOMDocument;
 use SimpleSAML\Configuration;
 use SimpleSAML\Logger;
+use CirrusIdentity\SSP\Utils\MetricLogger;
 
 class Cas20
 {
@@ -179,6 +180,16 @@ class Cas20
         $root->appendChild($casFailure);
 
         $xmlDocument->appendChild($root);
+
+        $serviceUrl = $_GET['service'] ?? $_GET['TARGET'] ?? null;
+        $msgState = [
+            'service' => $serviceUrl,
+            'host' => $_SERVER['SERVER_NAME'],
+            'ip' =>  $_SERVER['REMOTE_ADDR'],
+            'error' => $explanation,
+            'code' => $errorCode
+        ];
+        MetricLogger::getInstance()->logMetric('cas', 'error', $msgState);
 
         return $this->workAroundForBuggyJasigXmlParser($xmlDocument->saveXML());
     }
