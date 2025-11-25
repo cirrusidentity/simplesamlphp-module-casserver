@@ -4,16 +4,19 @@ declare(strict_types=1);
 
 namespace SimpleSAML\Module\casserver\Controller;
 
+use RuntimeException;
 use SimpleSAML\Auth\Simple;
 use SimpleSAML\Configuration;
 use SimpleSAML\HTTP\RunnableResponse;
 use SimpleSAML\Logger;
 use SimpleSAML\Module;
 use SimpleSAML\Module\casserver\Cas\Factories\TicketFactory;
+use SimpleSAML\Module\casserver\Cas\ServiceValidator;
 use SimpleSAML\Module\casserver\Cas\Ticket\TicketStore;
 use SimpleSAML\Module\casserver\Controller\Traits\UrlTrait;
 use SimpleSAML\Session;
 use SimpleSAML\Utils;
+use SimpleSAML\XHTML\Template;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Attribute\AsController;
 use Symfony\Component\HttpKernel\Attribute\MapQueryParameter;
@@ -23,50 +26,54 @@ class LogoutController
 {
     use UrlTrait;
 
-    /** @var Logger */
+    /** @var \SimpleSAML\Logger */
     protected Logger $logger;
 
-    /** @var Configuration */
+    /** @var \SimpleSAML\Configuration */
     protected Configuration $casConfig;
 
-    /** @var TicketFactory */
+    /** @var \SimpleSAML\Module\casserver\Cas\Factories\TicketFactory */
     protected TicketFactory $ticketFactory;
 
-    /** @var Simple  */
+    /** @var \SimpleSAML\Auth\Simple */
     protected Simple $authSource;
 
-    /** @var Utils\HTTP */
+    /** @var \SimpleSAML\Utils\HTTP */
     protected Utils\HTTP $httpUtils;
 
-    /** @var TicketStore */
+    /** @var \SimpleSAML\Module\casserver\Cas\Ticket\TicketStore */
     protected TicketStore $ticketStore;
+    private ServiceValidator $serviceValidator;
 
 
     /**
-     * @param   Configuration       $sspConfig
-     * @param   Configuration|null  $casConfig
-     * @param   Simple|null         $source
-     * @param   Utils\HTTP|null     $httpUtils
+     * @param \SimpleSAML\Configuration $sspConfig
+     * @param \SimpleSAML\Configuration|null $casConfig
+     * @param \SimpleSAML\Auth\Simple|null $source
+     * @param \SimpleSAML\Utils\HTTP|null $httpUtils
      *
      * @throws \Exception
      */
     public function __construct(
         private readonly Configuration $sspConfig,
         // Facilitate testing
-        Configuration $casConfig = null,
-        Simple $source = null,
-        Utils\HTTP $httpUtils = null,
+        ?Configuration $casConfig = null,
+        ?Simple $source = null,
+        ?Utils\HTTP $httpUtils = null,
     ) {
         // We are using this work around in order to bypass Symfony's autowiring for cas configuration. Since
         // the configuration class is the same, it loads the ssp configuration twice. Still, we need the constructor
         // argument in order to facilitate testin.
         $this->casConfig = ($casConfig === null || $casConfig === $sspConfig)
             ? Configuration::getConfig('module_casserver.php') : $casConfig;
+        $this->serviceValidator = new ServiceValidator($this->casConfig);
+
         $this->authSource = $source ?? new Simple($this->casConfig->getValue('authsource'));
         $this->httpUtils = $httpUtils ?? new Utils\HTTP();
 
         /* Instantiate ticket factory */
         $this->ticketFactory = new TicketFactory($this->casConfig);
+
         /* Instantiate ticket store */
         $ticketStoreConfig = $this->casConfig->getOptionalValue(
             'ticketstore',
@@ -77,36 +84,48 @@ class LogoutController
     }
 
     /**
+     * @param \Symfony\Component\HttpFoundation\Request $request
+     * @param string|null $url
      *
-     * @param   Request      $request
-     * @param   string|null  $url
-     *
-     * @return RunnableResponse
+     * @return \SimpleSAML\XHTML\Template|\SimpleSAML\HTTP\RunnableResponse
      */
     public function logout(
         Request $request,
         #[MapQueryParameter] ?string $url = null,
-    ): RunnableResponse {
+        #[MapQueryParameter] ?string $service = null,
+    ): Template|RunnableResponse {
         if (!$this->casConfig->getOptionalValue('enable_logout', false)) {
             $this->handleExceptionThrown('Logout not allowed');
         }
 
+        // note: casv3 says to ignore the casv2 url parameter, however deployments will see a mix of cas v2 and
+        // cas v3 clients so we support both.  casv3 makes a query parameter optional
+        $isCasV3 = empty($url);
+        $url = $isCasV3 ? $service : $url;
+
+        // Validate the return $url is valid
+        if (!is_null($url)) {
+            $isValidReturnUrl = !is_null($this->serviceValidator->checkServiceURL($this->sanitize($url)));
+            if (!$isValidReturnUrl) {
+                try {
+                    $url = $this->httpUtils->checkURLAllowed($url);
+                    $isValidReturnUrl = true;
+                } catch (\Exception $e) {
+                    Logger::info('Invalid cas logout url ' . $e->getMessage());
+                    $isValidReturnUrl = false;
+                }
+            }
+            if (!$isValidReturnUrl) {
+                // Protocol does not define behavior if invalid logout url sent
+                // act like no url sent and show logout page
+                Logger::info("Invalid logout url '$url'. Ignoring");
+                $url = null;
+            }
+        }
+
         // Skip Logout Page configuration
-        $skipLogoutPage = $this->casConfig->getOptionalValue('skip_logout_page', false);
+        $skipLogoutPage = !is_null($url) && ($isCasV3 || $this->casConfig->getOptionalValue('skip_logout_page', false));
 
-        if ($skipLogoutPage && $url === null) {
-            $this->handleExceptionThrown('Required URL query parameter [url] not provided. (CAS Server)');
-        }
-
-        // Construct the logout redirect url
-        if ($skipLogoutPage) {
-            $logoutRedirectUrl = $url;
-            $params = [];
-        } else {
-            $logoutRedirectUrl = Module::getModuleURL('casserver/loggedOut');
-            $params =  $url === null ? []
-                : ['url' => $url];
-        }
 
         // Delete the ticket from the session
         $session = $this->getSession();
@@ -114,20 +133,26 @@ class LogoutController
             $this->ticketStore->deleteTicket($session->getSessionId());
         }
 
-        // Redirect
-        if (!$this->authSource->isAuthenticated()) {
-            return new RunnableResponse([$this->httpUtils, 'redirectTrustedURL'], [$logoutRedirectUrl, $params]);
+        if ($this->authSource->isAuthenticated()) {
+            // Logout and come back here to handle the logout
+            return new RunnableResponse(
+                [$this->authSource, 'logout'],
+                [$this->httpUtils->getSelfURL()],
+            );
+        } elseif ($skipLogoutPage) {
+            $params = [];
+            return new RunnableResponse([$this->httpUtils, 'redirectTrustedURL'], [$url, $params]);
+        } else {
+            $t = new Template($this->sspConfig, 'casserver:loggedOut.twig');
+            if ($url) {
+                $t->data['url'] = $url;
+            }
+            return $t;
         }
-
-        // Logout and redirect
-        return new RunnableResponse(
-            [$this->authSource, 'logout'],
-            [$logoutRedirectUrl],
-        );
     }
 
     /**
-     * @return TicketStore
+     * @return \SimpleSAML\Module\casserver\Cas\Ticket\TicketStore
      */
     public function getTicketStore(): TicketStore
     {
@@ -135,20 +160,20 @@ class LogoutController
     }
 
     /**
-     * @param   string  $message
+     * @param string $message
      *
      * @return void
      */
     protected function handleExceptionThrown(string $message): void
     {
         Logger::debug('casserver:' . $message);
-        throw new \RuntimeException($message);
+        throw new RuntimeException($message);
     }
 
     /**
      * Get the Session
      *
-     * @return Session|null
+     * @return \SimpleSAML\Session|null
      */
     protected function getSession(): ?Session
     {
