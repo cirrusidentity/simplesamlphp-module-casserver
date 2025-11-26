@@ -24,6 +24,7 @@
 namespace SimpleSAML\Module\casserver\Cas\Protocol;
 
 use SimpleSAML\Configuration;
+use CirrusIdentity\SSP\Utils\MetricLogger;
 
 class Cas10
 {
@@ -46,10 +47,21 @@ class Cas10
 
 
     /**
+     * @param string $errorCode
+     * @param string $explanation
      * @return string
      */
-    public function getValidateFailureResponse()
+    public function getValidateFailureResponse($errorCode, $explanation):string
     {
+        $msgState = [
+            'service' => $_GET['service'],
+            'host' => $_SERVER['SERVER_NAME'],
+            'ip' =>  $_SERVER['REMOTE_ADDR'],
+            'error' => $explanation,
+            'code' => $errorCode
+        ];
+        MetricLogger::getInstance()->logMetric('cas', 'error', $msgState);
+
         return "no\n\n";
     }
 }
