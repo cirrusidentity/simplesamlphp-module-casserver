@@ -9,6 +9,8 @@ use SimpleSAML\Logger;
 use SimpleSAML\Module\casserver\Http\XmlResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use CirrusIdentity\SSP\Utils\MetricLogger;
+
 
 trait TicketValidatorTrait
 {
@@ -87,7 +89,13 @@ trait TicketValidatorTrait
         if ($failed) {
             $finalMessage = 'casserver:validate: ' . $message;
             Logger::error(__METHOD__ . '::' . $finalMessage);
-
+            $msgState = [
+                'service' => $serviceUrl,
+                'host' => $request->getHost(),
+                'ip' => $request->getClientIp(),
+                'error' => $message,
+            ];
+            MetricLogger::getInstance()->logMetric('cas', 'error', $msgState);
             return new XmlResponse(
                 (string)$this->cas20Protocol->getValidateFailureResponse(C::ERR_INVALID_SERVICE, $message),
                 Response::HTTP_BAD_REQUEST,
