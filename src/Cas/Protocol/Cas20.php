@@ -26,6 +26,7 @@ declare(strict_types=1);
 namespace SimpleSAML\Module\casserver\Cas\Protocol;
 
 use DateTimeImmutable;
+use CirrusIdentity\SSP\Utils\MetricLogger;
 use SimpleSAML\CAS\XML\cas\Attributes;
 use SimpleSAML\CAS\XML\cas\AuthenticationDate;
 use SimpleSAML\CAS\XML\cas\AuthenticationFailure;
@@ -42,6 +43,8 @@ use SimpleSAML\Configuration;
 use SimpleSAML\Logger;
 use SimpleSAML\XML\Chunk;
 use SimpleSAML\XML\DOMDocumentFactory;
+
+use Symfony\Component\HttpFoundation\Request;
 
 use function base64_encode;
 use function count;
@@ -173,6 +176,16 @@ class Cas20
     {
         $authenticationFailure = new AuthenticationFailure($explanation, $errorCode);
         $serviceResponse = new ServiceResponse($authenticationFailure);
+        $request = Request::createFromGlobals();
+        $serviceUrl = $request->query->getString('service', $request->query->getString('TARGET'));
+        $msgState = [
+            'service' => $serviceUrl,
+            'host' => $request->getHost(),
+            'ip' => $request->getClientIp(),
+            'error' => $explanation,
+            'code' => $errorCode
+        ];
+        MetricLogger::getInstance()->logMetric('cas', 'error', $msgState);
 
         return $serviceResponse;
     }

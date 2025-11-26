@@ -12,6 +12,9 @@ use SimpleSAML\Module;
 use SimpleSAML\Module\casserver\Cas\CasException;
 use SimpleSAML\Module\casserver\Cas\Factories\TicketFactory;
 use SimpleSAML\Module\casserver\Cas\Ticket\TicketStore;
+use Symfony\Component\HttpFoundation\Request;
+use CirrusIdentity\SSP\Utils\MetricLogger;
+
 
 class TicketValidator
 {
@@ -68,9 +71,19 @@ class TicketValidator
         }
 
         $serviceTicket = $this->ticketStore->getTicket($ticket);
+        $request = Request::createFromGlobals();
+
         if ($serviceTicket == null) {
             $message = 'Ticket ' . var_export($ticket, true) . ' not recognized';
             Logger::debug('casserver:' . $message);
+            $msgState = [
+                'service' => $service,
+                'host' => $request->getHost(),
+                'ip' => $request->getClientIp(),
+                'error' => $message,
+            ];
+            MetricLogger::getInstance()->logMetric('cas', 'error', $msgState);
+
             throw new CasException(C::ERR_INVALID_TICKET, $message);
         }
 
@@ -80,6 +93,13 @@ class TicketValidator
         if ($this->ticketFactory->isExpired($serviceTicket)) {
             $message = 'Ticket ' . var_export($ticket, true) . ' has expired';
             Logger::debug('casserver:' . $message);
+            $msgState = [
+                'service' => $service,
+                'host' => $request->getHost(),
+                'ip' => $request->getClientIp(),
+                'error' => $message,
+            ];
+            MetricLogger::getInstance()->logMetric('cas', 'error', $msgState);
             throw new CasException(C::ERR_INVALID_TICKET, $message);
         }
 
@@ -89,6 +109,13 @@ class TicketValidator
                 ' but was: ' . var_export($service, true);
 
             Logger::debug('casserver:' . $message);
+            $msgState = [
+                'service' => $service,
+                'host' => $request->getHost(),
+                'ip' => $request->getClientIp(),
+                'error' => $message,
+            ];
+            MetricLogger::getInstance()->logMetric('cas', 'error', $msgState);
             throw new CasException(C::ERR_INVALID_SERVICE, $message);
         }
 
