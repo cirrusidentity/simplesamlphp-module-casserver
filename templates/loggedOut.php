@@ -33,7 +33,7 @@ $this->includeAtTemplateBase('includes/header.php');
 
 <?php
 if (isset($this->data['url'])) {
-    echo('<p><a href="' . $this->data["url"] . '">' . $this->t('{casserver:casserver:continue_heading}') . '</a>');
+    echo('<p><a href="' . htmlspecialchars($this->data["url"]) . '">' . $this->t('{casserver:casserver:continue_heading}') . '</a>');
 }
 ?>
 

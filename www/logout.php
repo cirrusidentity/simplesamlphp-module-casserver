@@ -74,28 +74,20 @@ if (!is_null($session)) {
 
 if ($as->isAuthenticated()) {
     \SimpleSAML\Logger::debug('casserver: performing a real logout');
-
-    if ($skipLogoutPage) {
-        $as->logout($url);
-    } else {
-        $as->logout(
-            \SimpleSAML\Utils\HTTP::addURLParameters(
-                \SimpleSAML\Module::getModuleURL('casserver/loggedOut.php'),
-                $url ? ['url' => $url] : []
-            )
-        );
-    }
+    // Browser will be returned to this url and we will handle any $url checking
+    $as->logout(\SimpleSAML\Utils\HTTP::getSelfURL());
 } else {
     \SimpleSAML\Logger::debug('casserver: no session to log out of, performing redirect');
 
     if ($skipLogoutPage) {
         \SimpleSAML\Utils\HTTP::redirectTrustedURL($url);
     } else {
-        \SimpleSAML\Utils\HTTP::redirectTrustedURL(
-            \SimpleSAML\Utils\HTTP::addURLParameters(
-                \SimpleSAML\Module::getModuleURL('casserver/loggedOut.php'),
-                $url ? ['url' => $url] : []
-            )
-        );
+        session_cache_limiter('nocache');
+        $globalConfig = \SimpleSAML\Configuration::getInstance();
+        $t = new \SimpleSAML\XHTML\Template($globalConfig, 'casserver:loggedOut.php');
+        if (!empty($url)) {
+            $t->data['url'] = $_GET['url'];
+        }
+        $t->show();
     }
 }

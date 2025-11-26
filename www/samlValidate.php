@@ -5,6 +5,7 @@ use SAML2\DOMDocumentFactory;
 use SAML2\Utils;
 use SimpleSAML\Logger;
 use SimpleSAML\Module\casserver\Cas\Protocol\SamlValidateResponder;
+use SimpleSAML\Module\casserver\Cas\CasException;
 
 $target = $_GET['TARGET'];
 
@@ -30,7 +31,32 @@ $casconfig = \SimpleSAML\Configuration::getConfig('module_casserver.php');
 
 $ticketValidator = new \SimpleSAML\Module\casserver\Cas\TicketValidator($casconfig);
 
-$ticket = $ticketValidator->validateAndDeleteTicket($ticketId, $target);
+try {
+    $ticket = $ticketValidator->validateAndDeleteTicket($ticketId, $target);
+} catch (CasException $e) {
+    // log error metric
+    $msgState = [
+        'service' => $target,
+        'host' => $_SERVER['SERVER_NAME'],
+        'ip' =>  $_SERVER['REMOTE_ADDR'],
+        'error' => $e->getMessage(),
+        'code' => $e->getCasCode()
+    ];
+    MetricLogger::getInstance()->logMetric('cas', 'error', $msgState);
+    throw $e;
+} catch (Exception $e) {
+    // log error metric
+    $msgState = [
+        'service' => $target,
+        'host' => $_SERVER['SERVER_NAME'],
+        'ip' =>  $_SERVER['REMOTE_ADDR'],
+        'error' => $e->getMessage(),
+        'code' => 'INTERNAL_ERROR'
+    ];
+    MetricLogger::getInstance()->logMetric('cas', 'error', $msgState);
+    throw $e;
+}
+
 if (!is_array($ticket)) {
     throw new \Exception('Error loading ticket');
 }
