@@ -45,9 +45,7 @@
         "symfony/http-foundation": "^6.4",
         "symfony/http-kernel": "^6.4",
         "simplesamlphp/saml11": "~1.2.4",
-        "cirrusidentity/simplesamlphp-module-authidppersp": "~v4.0.0-BETA",
-        "cirrusidentity/simplesamlphp-internal-utils": "~v3.0.1",
-	"cirrusidentity/simplesamlphp-module-cirrusgeneral": "~v3.0.0-alpha.3"
+        "cirrusidentity/simplesamlphp-internal-utils": "~v3.0.1"
     },
     "require-dev": {
         "simplesamlphp/simplesamlphp-test-framework": "^1.7",
@@ -78,14 +76,6 @@
         ]
     },
     "repositories": {
-        "simplesamlphp-module-authidppersp": {
-            "type": "vcs",
-            "url": "git@bitbucket.org:cirrusidentity/simplesamlphp-module-authidppersp.git"
-        },
-        "cirrus-cirrusdynamicconfig": {
-            "type": "git",
-            "url": "git@bitbucket.org:cirrusidentity/simplesamlphp-module-cirrusdynamicconfig.git"
-        },
         "cirrus-cirrusinternal": {
             "type": "git",
             "url": "git@bitbucket.org:cirrusidentity/simplesaml-internal-utils.git"
